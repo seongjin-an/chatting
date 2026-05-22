@@ -1,0 +1,43 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: user-service
+
+  datasource:
+    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/delivery}
+    username: ${DATASOURCE_USERNAME:delivery}
+    password: ${DATASOURCE_PASSWORD:delivery}
+    driver-class-name: org.postgresql.Driver
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET:delivery-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm}
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION:3600000}      # 1시간
+  refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7일
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
