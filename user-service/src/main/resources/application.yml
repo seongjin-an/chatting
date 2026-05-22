@@ -6,10 +6,10 @@ spring:
     name: user-service
 
   datasource:
-    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/delivery}
-    username: ${DATASOURCE_USERNAME:delivery}
-    password: ${DATASOURCE_PASSWORD:delivery}
-    driver-class-name: org.postgresql.Driver
+    url: ${DATASOURCE_URL:jdbc:mysql://localhost:23306/chatting}
+    username: ${DATASOURCE_USERNAME:dev_user}
+    password: ${DATASOURCE_PASSWORD:dev_password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   data:
     redis:
@@ -32,7 +32,7 @@ eureka:
     prefer-ip-address: true
 
 jwt:
-  secret: ${JWT_SECRET:delivery-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm}
+  secret: ${JWT_SECRET:chatting-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm}
   access-token-expiration: ${JWT_ACCESS_EXPIRATION:3600000}      # 1시간
   refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7일
 
