@@ -3,25 +3,13 @@
 import { useState, useEffect, useRef, FormEvent } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-
-interface Message {
-  id: string;
-  sender: string;
-  content: string;
-  timestamp: Date;
-  mine: boolean;
-}
-
-const MOCK_MESSAGES: Message[] = [
-  { id: "1", sender: "홍길동", content: "안녕하세요!", timestamp: new Date(), mine: false },
-  { id: "2", sender: "나", content: "반갑습니다.", timestamp: new Date(), mine: true },
-];
+import { useChat } from "@/hooks/useWebSocket";
 
 export default function ChatRoomPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const { roomId } = useParams<{ roomId: string }>();
-  const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
+  const { connected, messages, sendMessage } = useChat(roomId);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -35,19 +23,8 @@ export default function ChatRoomPage() {
 
   function handleSend(e: FormEvent) {
     e.preventDefault();
-    if (!input.trim() || !user) return;
-
-    // TODO: WebSocket으로 메시지 전송
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        sender: user.name,
-        content: input.trim(),
-        timestamp: new Date(),
-        mine: true,
-      },
-    ]);
+    if (!input.trim()) return;
+    sendMessage(input);
     setInput("");
   }
 
@@ -70,36 +47,43 @@ export default function ChatRoomPage() {
         </button>
         <div>
           <p className="text-sm font-semibold text-gray-900">채팅방 {roomId}</p>
-          <p className="text-xs text-gray-400">WebSocket 연동 전 임시 UI</p>
+          <p className="text-xs text-gray-400">
+            {connected ? "연결됨" : "연결 중..."}
+          </p>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex flex-col ${msg.mine ? "items-end" : "items-start"}`}
-          >
-            {!msg.mine && (
-              <span className="text-xs text-gray-500 mb-1">{msg.sender}</span>
-            )}
+        {messages.map((msg) => {
+          const mine = msg.senderId === user.id;
+          return (
             <div
-              className={`max-w-xs px-3 py-2 rounded-2xl text-sm ${
-                msg.mine
-                  ? "bg-indigo-600 text-white rounded-br-none"
-                  : "bg-white border border-gray-200 text-gray-800 rounded-bl-none"
-              }`}
+              key={msg.seq}
+              className={`flex flex-col ${mine ? "items-end" : "items-start"}`}
             >
-              {msg.content}
+              {!mine && (
+                <span className="text-xs text-gray-500 mb-1">
+                  {msg.senderName}
+                </span>
+              )}
+              <div
+                className={`max-w-xs px-3 py-2 rounded-2xl text-sm ${
+                  mine
+                    ? "bg-indigo-600 text-white rounded-br-none"
+                    : "bg-white border border-gray-200 text-gray-800 rounded-bl-none"
+                }`}
+              >
+                {msg.content}
+              </div>
+              <span className="text-xs text-gray-400 mt-1">
+                {new Date(msg.createdAt).toLocaleTimeString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
             </div>
-            <span className="text-xs text-gray-400 mt-1">
-              {msg.timestamp.toLocaleTimeString("ko-KR", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          </div>
-        ))}
+          );
+        })}
         <div ref={bottomRef} />
       </div>
 
@@ -116,7 +100,7 @@ export default function ChatRoomPage() {
         />
         <button
           type="submit"
-          disabled={!input.trim()}
+          disabled={!input.trim() || !connected}
           className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-full hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           전송

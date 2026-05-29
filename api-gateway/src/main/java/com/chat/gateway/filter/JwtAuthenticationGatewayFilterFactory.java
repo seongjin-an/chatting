@@ -59,12 +59,18 @@ public class JwtAuthenticationGatewayFilterFactory
                 return chain.filter(exchange);
             }
 
+            // 브라우저 WebSocket은 커스텀 헤더 설정 불가 → ?token= 쿼리 파라미터 폴백
+            String token = null;
             String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return unauthorized(exchange);
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7);
+            } else {
+                token = exchange.getRequest().getQueryParams().getFirst("token");
             }
 
-            String token = authHeader.substring(7);
+            if (token == null) {
+                return unauthorized(exchange);
+            }
             Claims claims;
             try {
                 claims = Jwts.parser()
