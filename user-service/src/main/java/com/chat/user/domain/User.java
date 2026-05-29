@@ -1,6 +1,5 @@
 package com.chat.user.domain;
 
-import com.chat.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

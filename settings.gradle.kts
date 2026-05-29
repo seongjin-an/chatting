@@ -14,3 +14,5 @@ include(
     "api-gateway",
     "user-service",
 )
+
+include("connection-service")
