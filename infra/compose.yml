@@ -3,16 +3,19 @@ services:
     image: mysql:8.0.33
     container_name: chatting-mysql
     restart: unless-stopped
-#    command: --log-bin=mysql-bin --binlog-format=ROW --binlog-row-image=FULL --server-id=1
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --skip-character-set-client-handshake
     environment:
       MYSQL_ROOT_PASSWORD: 1234
-      MYSQL_DATABASE: chatting
       MYSQL_USER: dev_user
       MYSQL_PASSWORD: dev_password
     ports:
       - "23306:3306"
     volumes:
       - ./.data/mysql:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   # ── Kafka (KRaft 모드 — Zookeeper 없음) ──────────────────────────────────────
   kafka:

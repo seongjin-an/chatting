@@ -3,21 +3,22 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useCreateChannel } from "@/hooks/useChannel";
 
 export default function CreateRoomPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState("");
+  const createChannel = useCreateChannel();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.replace("/login");
   }, [isAuthenticated, isLoading, router]);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    // TODO: 채팅 서비스 API 연동
-    alert(`"${name}" 방 만들기 기능은 채팅 서비스 연동 후 사용 가능합니다.`);
+    if (!title.trim()) return;
+    createChannel.mutate(title.trim());
   }
 
   if (isLoading) {
@@ -40,24 +41,12 @@ export default function CreateRoomPage() {
             </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               required
+              maxLength={100}
               placeholder="채팅방 이름을 입력하세요"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              설명
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="채팅방 설명을 입력하세요"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
             />
           </div>
 
@@ -71,11 +60,18 @@ export default function CreateRoomPage() {
             </button>
             <button
               type="submit"
-              className="flex-1 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"
+              disabled={!title.trim() || createChannel.isPending}
+              className="flex-1 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              만들기
+              {createChannel.isPending ? "생성 중..." : "만들기"}
             </button>
           </div>
+
+          {createChannel.isError && (
+            <p className="text-sm text-red-500 text-center">
+              채팅방 생성에 실패했습니다.
+            </p>
+          )}
         </form>
       </div>
     </div>

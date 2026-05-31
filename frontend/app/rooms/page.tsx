@@ -1,37 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
-
-interface Room {
-  id: string;
-  name: string;
-  description: string;
-  memberCount: number;
-}
-
-const MOCK_ROOMS: Room[] = [
-  { id: "1", name: "일반 채팅방", description: "자유롭게 대화하세요", memberCount: 12 },
-  { id: "2", name: "개발자 모임", description: "개발 관련 이야기", memberCount: 8 },
-  { id: "3", name: "공지사항", description: "중요 공지", memberCount: 25 },
-];
+import { useChannels, useJoinChannel } from "@/hooks/useChannel";
 
 export default function RoomsPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const { data: channels = [], isLoading: isChannelsLoading } = useChannels();
+  const joinChannel = useJoinChannel();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.replace("/login");
   }, [isAuthenticated, isLoading, router]);
 
-  const filtered = MOCK_ROOMS.filter(
-    (r) => r.name.includes(search) || r.description.includes(search)
+  const filtered = channels.filter((c) =>
+    c.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (isLoading) {
+  async function handleEnter(channelId: number) {
+    try {
+      await joinChannel.mutateAsync(channelId);
+    } catch {
+      // 이미 참여 중이면 무시
+    }
+    router.push(`/rooms/${channelId}`);
+  }
+
+  if (isLoading || isChannelsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
@@ -64,28 +63,27 @@ export default function RoomsPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 divide-y divide-gray-100">
         {filtered.length === 0 ? (
           <p className="px-6 py-8 text-center text-sm text-gray-400">
-            검색 결과가 없습니다.
+            채팅방이 없습니다.
           </p>
         ) : (
-          filtered.map((room) => (
-            <Link
-              key={room.id}
-              href={`/rooms/${room.id}`}
+          filtered.map((channel) => (
+            <div
+              key={channel.channelId}
               className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
             >
-              <div>
-                <p className="text-sm font-semibold text-gray-900">{room.name}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{room.description}</p>
-              </div>
-              <span className="text-xs text-gray-400">{room.memberCount}명</span>
-            </Link>
+              <p className="text-sm font-semibold text-gray-900">
+                {channel.title}
+              </p>
+              <button
+                onClick={() => handleEnter(channel.channelId)}
+                className="px-3 py-1.5 text-xs font-medium text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50"
+              >
+                입장
+              </button>
+            </div>
           ))
         )}
       </div>
-
-      <p className="mt-4 text-xs text-center text-gray-400">
-        * 채팅방 기능은 채팅 서비스 연동 후 활성화됩니다.
-      </p>
     </div>
   );
 }

@@ -29,12 +29,13 @@ public class JwtTokenProvider {
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
-    public String createAccessToken(String userId, String role) {
+    public String createAccessToken(String userId, String role, String name) {
         Date now = new Date();
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())   // jti — 블랙리스트 키로 사용
                 .subject(userId)
                 .claim("role", role)
+                .claim("name", name)
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + accessTokenExpiration))
                 .signWith(secretKey)

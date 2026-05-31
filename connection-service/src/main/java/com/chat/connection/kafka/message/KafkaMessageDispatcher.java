@@ -2,7 +2,6 @@ package com.chat.connection.kafka.message;
 
 import com.chat.common.JsonUtil;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -25,18 +24,18 @@ public class KafkaMessageDispatcher {
 
     public void dispatch(String rawJson) {
         try {
-            KafkaInboundEnvelope kafkaInboundEnvelope = jsonUtil.fromJson(rawJson,
-                KafkaInboundEnvelope.class).orElseThrow();
+            KafkaEnvelope kafkaEnvelope = jsonUtil.fromJson(rawJson,
+                KafkaEnvelope.class).orElseThrow();
 
             KafkaMessageType kafkaMessageType = KafkaMessageType.valueOf(
-                kafkaInboundEnvelope.type());
+                kafkaEnvelope.type());
             KafkaMessageProcessor<?> kafkaMessageProcessor = handlerMap.get(kafkaMessageType);
             if (kafkaMessageProcessor == null) {
                 log.warn("No handler registered for type: {}", kafkaMessageType);
                 return;
             }
 
-            dispatchInternal(kafkaMessageProcessor, kafkaInboundEnvelope.payload());
+            dispatchInternal(kafkaMessageProcessor, kafkaEnvelope.payload());
         } catch (IllegalArgumentException e) {
             log.warn("Unknown message type: {}", e.getMessage());
         } catch (Exception e) {

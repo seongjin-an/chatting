@@ -1,4 +1,4 @@
-package com.chat.common.security;
+package com.chat.user.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -13,11 +13,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * API Gateway 가 JWT 검증 후 주입하는 X-User-Id / X-User-Role 헤더를 읽어
- * Spring Security Context 를 채운다.
- * 각 서비스는 JWT 를 직접 파싱하지 않고 이 헤더를 신뢰한다.
- */
 @Component
 public class UserIdHeaderFilter extends OncePerRequestFilter {
 

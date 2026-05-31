@@ -1,6 +1,7 @@
 package com.chat.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +37,15 @@ public class JsonUtil {
         try {
             return Optional.ofNullable(objectMapper.writeValueAsString(object));
         } catch (JsonProcessingException e) {
+            log.error("Failed to convert object to json: {}", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    public <T> Optional<JsonNode> convertJsonNode(T data) {
+        try {
+            return Optional.ofNullable(objectMapper.valueToTree(data));
+        } catch (Exception e) {
             log.error("Failed to convert object to json: {}", e.getMessage());
             return Optional.empty();
         }

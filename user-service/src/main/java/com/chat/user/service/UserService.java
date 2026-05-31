@@ -52,7 +52,7 @@ public class UserService {
         }
 
         String userId = user.getId().toString();
-        String accessToken  = jwtTokenProvider.createAccessToken(userId, user.getRole().name());
+        String accessToken  = jwtTokenProvider.createAccessToken(userId, user.getRole().name(), user.getName());
         String refreshToken = jwtTokenProvider.createRefreshToken(userId);
 
         tokenService.saveRefreshToken(userId, refreshToken,
@@ -98,7 +98,7 @@ public class UserService {
         User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> BusinessException.notFound("사용자를 찾을 수 없습니다."));
 
-        String newAccessToken  = jwtTokenProvider.createAccessToken(userId, user.getRole().name());
+        String newAccessToken  = jwtTokenProvider.createAccessToken(userId, user.getRole().name(), user.getName());
         String newRefreshToken = jwtTokenProvider.createRefreshToken(userId);
 
         tokenService.saveRefreshToken(userId, newRefreshToken,

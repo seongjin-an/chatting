@@ -15,6 +15,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -91,10 +92,16 @@ public class JwtAuthenticationGatewayFilterFactory
                             return unauthorized(exchange);
                         }
 
+                        String rawName = claims.get("name", String.class);
+                        String encodedName = rawName != null
+                                ? URLEncoder.encode(rawName, StandardCharsets.UTF_8)
+                                : "";
+
                         ServerWebExchange mutated = exchange.mutate()
                                 .request(r -> r
                                         .header("X-User-Id",   claims.getSubject())
                                         .header("X-User-Role", claims.get("role", String.class))
+                                        .header("X-User-Name", encodedName)
                                 )
                                 .build();
 

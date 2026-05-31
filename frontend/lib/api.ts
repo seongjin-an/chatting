@@ -32,6 +32,37 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface SpringPage<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+  first: boolean;
+  size: number;
+  number: number;
+  numberOfElements: number;
+  empty: boolean;
+}
+
+export interface Channel {
+  channelId: number;
+  title: string;
+}
+
+export interface MessageHistory {
+  channelId: number;
+  messageId: number;
+  userId: string;
+  userName: string;
+  content: string;
+  createdAt: number;
+}
+
+export interface MessageCursorResult {
+  nextKey: number;
+  messages: MessageHistory[];
+}
+
 export const authApi = {
   signUp: (data: SignUpRequest) =>
     apiClient.post<ApiResponse<UserResponse>>("/auth/signup", data),
@@ -47,4 +78,31 @@ export const authApi = {
     }),
 
   me: () => apiClient.get<ApiResponse<UserResponse>>("/auth/me"),
+};
+
+export const channelApi = {
+  getChannels: (page = 0, size = 20) =>
+    apiClient.get<ApiResponse<SpringPage<Channel>>>("/channels", {
+      params: { page, size, sort: "channelId,desc" },
+    }),
+
+  getMyChannels: (page = 0, size = 20) =>
+    apiClient.get<ApiResponse<SpringPage<Channel>>>("/channels/me", {
+      params: { page, size, sort: "channelId,desc" },
+    }),
+
+  createChannel: (title: string) =>
+    apiClient.post<ApiResponse<Channel>>("/channels", { title }),
+
+  joinChannel: (channelId: number) =>
+    apiClient.post<ApiResponse<void>>(`/channels/${channelId}/members`),
+
+  leaveChannel: (channelId: number) =>
+    apiClient.delete<ApiResponse<void>>(`/channels/${channelId}/members/me`),
+
+  getMessages: (channelId: number, beforeSeq?: number, size = 50) =>
+    apiClient.get<ApiResponse<MessageCursorResult>>(
+      `/channels/${channelId}/messages`,
+      { params: { ...(beforeSeq != null && { beforeSeq }), size } }
+    ),
 };

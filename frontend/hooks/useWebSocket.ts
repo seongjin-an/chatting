@@ -1,6 +1,3 @@
-/**
- * 연결 / 해제 / 하트비트
- */
 "use client";
 
 import { useEffect } from "react";
@@ -22,16 +19,20 @@ export function useWebSocketConnection() {
   }, [accessToken]);
 }
 
+const EMPTY_MESSAGES: import("@/store/webSocketStore").ContentMessage[] = [];
+
 // 채팅방 페이지에서 사용
-export function useChat(roomId: string) {
+export function useChat(channelId: string) {
   const connected = useWebSocketStore((s) => s.connected);
-  const messages = useWebSocketStore((s) => s.getMessages(roomId));
+  // getMessages()는 매 호출마다 새 [] 참조를 반환해 무한루프 유발
+  // → 스토어 상태를 직접 선택하고 빈 배열은 모듈 레벨 상수로 처리
+  const messages = useWebSocketStore((s) => s.messages[channelId] ?? EMPTY_MESSAGES);
 
   function sendMessage(content: string) {
     if (!content.trim()) return;
     sendWebSocketMessage({
       type: "SEND_MESSAGE",
-      payload: { roomId: Number(roomId), content: content.trim() },
+      payload: { channelId: Number(channelId), content: content.trim() },
     });
   }
 

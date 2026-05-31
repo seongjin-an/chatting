@@ -33,9 +33,9 @@ public class WebSocketInboundContentHandler implements WebSocketMessageProcessor
 
     @Override
     public void handle(WebSocketSession session, ContentPayload payload) {
-        String userId = (String) session.getAttributes().get(Constant.USER_ID);
-        // 카프카로 전송
-        ContentMessageRequest contentMessageRequest = ContentMessageRequest.of(UserId.of(userId), payload, serverId);
+        String userId   = (String) session.getAttributes().get(Constant.USER_ID);
+        String userName = (String) session.getAttributes().get(Constant.USER_NAME);
+        ContentMessageRequest contentMessageRequest = ContentMessageRequest.of(UserId.of(userId), userName, payload, serverId);
         kafkaProducer.sendContentPayloadByPartitionKey(contentMessageRequest);
     }
 }

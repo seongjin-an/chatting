@@ -1,7 +1,7 @@
 package com.chat.user.config;
 
 import org.springframework.context.annotation.Bean;
-import com.chat.common.security.UserIdHeaderFilter;
+import com.chat.user.security.UserIdHeaderFilter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;

@@ -16,3 +16,4 @@ include(
 )
 
 include("connection-service")
+include("message-service")
