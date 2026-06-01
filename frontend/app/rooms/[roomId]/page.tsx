@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useChat } from "@/hooks/useWebSocket";
 import { useChannelMessages, useJoinChannel } from "@/hooks/useChannel";
 import { type MessageHistory } from "@/lib/api";
-import { type ContentMessage } from "@/store/webSocketStore";
+import { type ContentMessage, useWebSocketStore } from "@/store/webSocketStore";
 
 type DisplayMessage = {
   seq: number;
@@ -41,7 +41,8 @@ export default function ChatRoomPage() {
   const router = useRouter();
   const { roomId: channelId } = useParams<{ roomId: string }>();
   const { connected, messages: wsMessages, sendMessage } = useChat(channelId);
-  const { data: historyResult } = useChannelMessages(Number(channelId));
+  const { data: historyResult, refetch: refetchHistory } = useChannelMessages(Number(channelId));
+  const refetchTrigger = useWebSocketStore((s) => s.refetchTriggers[channelId] ?? 0);
   const joinChannel = useJoinChannel();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -49,6 +50,11 @@ export default function ChatRoomPage() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.replace("/login");
   }, [isAuthenticated, isLoading, router]);
+
+  // WS 갭 감지 시 REST로 누락 구간 복구
+  useEffect(() => {
+    if (refetchTrigger > 0) refetchHistory();
+  }, [refetchTrigger]);
 
   // 방 입장 시 자동 참여
   useEffect(() => {
