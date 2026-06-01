@@ -42,12 +42,16 @@ public class MessageEntity extends BaseEntity{
         return new MessageEntity(channelId, messageId, userId, userName, content);
     }
 
-    @AllArgsConstructor
-    @NoArgsConstructor
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
     @Getter
     public static class MessageEntityId implements Serializable {
         private Long channelId;
         private Long messageId;
+
+        public static MessageEntityId of(Long channelId, Long messageId) {
+            return new MessageEntityId(channelId, messageId);
+        }
 
         @Override
         public boolean equals(Object o) {

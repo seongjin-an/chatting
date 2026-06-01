@@ -1,17 +1,11 @@
 package com.chat.message.kafka.message.in;
 
 import com.chat.common.ContentMessage;
-import com.chat.common.JsonUtil;
-import com.chat.common.KeyPrefix;
 import com.chat.message.domain.MessageEntity;
-import com.chat.message.kafka.KafkaProducer;
 import com.chat.message.kafka.message.KafkaMessageProcessor;
 import com.chat.message.kafka.message.KafkaMessageType;
-import com.chat.message.repository.channelmember.ChannelMemberRepository;
+import com.chat.message.outbox.OutboxEventWriter;
 import com.chat.message.repository.message.MessageRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +21,8 @@ public class MessageRelayHandler implements KafkaMessageProcessor<MessageRelayRe
     private static final String SEQ_KEY_PREFIX = "channel:seq:";
 
     private final StringRedisTemplate redisTemplate;
-    private final ChannelMemberRepository channelMemberRepository;
     private final MessageRepository messageRepository;
-    private final KafkaProducer kafkaProducer;
-    private final JsonUtil jsonUtil;
+    private final OutboxEventWriter outboxEventWriter;
 
     @Override
     public KafkaMessageType getSupportedType() {
@@ -62,32 +54,10 @@ public class MessageRelayHandler implements KafkaMessageProcessor<MessageRelayRe
         );
         messageRepository.save(messageEntity);
 
-        // 3. 채널 멤버 각각에게 라우팅
+        // 3. Outbox 저장 (같은 트랜잭션 — 메시지 저장과 원자적으로 묶임)
         ContentMessage contentMessage = new ContentMessage(
             seq, request.channelId(), request.senderId(), request.senderName(), request.content(), seq, now
         );
-
-        channelMemberRepository.findByChannelId(request.channelId())
-            .forEach(member -> routeToUserInstances(member.getUserId().toString(), contentMessage));
-    }
-
-    private void routeToUserInstances(String userId, ContentMessage message) {
-        Set<String> connectionKeys = redisTemplate.opsForSet().members(KeyPrefix.WEBSOCKET_USER + userId);
-        if (connectionKeys == null || connectionKeys.isEmpty()) {
-            return; // 오프라인 유저 스킵
-        }
-
-        Set<String> instanceIds = new HashSet<>();
-        for (String connectionKey : connectionKeys) {
-            String connectionInfoJson = redisTemplate.opsForValue().get(KeyPrefix.WEBSOCKET_CONNECTION + connectionKey);
-            if (connectionInfoJson == null) continue;
-
-            jsonUtil.fromJson(connectionInfoJson, JsonNode.class)
-                .map(node -> node.get("instanceId"))
-                .map(JsonNode::asText)
-                .ifPresent(instanceIds::add);
-        }
-
-        instanceIds.forEach(instanceId -> kafkaProducer.sendContentMessageResponse(instanceId, userId, message));
+        outboxEventWriter.write(contentMessage);
     }
 }

@@ -3,6 +3,7 @@ package com.chat.message.repository.message;
 import com.chat.message.domain.MessageEntity;
 import com.chat.message.domain.MessageEntity.MessageEntityId;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
