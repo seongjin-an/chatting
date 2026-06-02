@@ -5,7 +5,7 @@ import java.util.List;
 public record MessageFanoutPayload(
     String eventId,
     Long channelId,
-    Long messageId,
+    String messageId,
     String senderId,
     String senderName,
     String content,

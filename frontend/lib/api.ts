@@ -51,7 +51,7 @@ export interface Channel {
 
 export interface MessageHistory {
   channelId: number;
-  messageId: number;
+  messageId: string;
   userId: string;
   userName: string;
   content: string;

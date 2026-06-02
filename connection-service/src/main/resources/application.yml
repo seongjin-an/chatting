@@ -53,3 +53,4 @@ chatting:
         concurrency: 3
         partitions: 3
         replicasFactor: 1
+        retentionMs: 120000   # 파드 종료 후 고아 토픽 메시지 2분 내 자동 삭제

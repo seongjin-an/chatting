@@ -6,10 +6,10 @@ import com.chat.message.kafka.message.KafkaMessageProcessor;
 import com.chat.message.kafka.message.KafkaMessageType;
 import com.chat.message.outbox.OutboxEventWriter;
 import com.chat.message.repository.message.MessageRepository;
+import com.chat.message.util.SnowflakeIdGenerator;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,9 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class MessageRelayHandler implements KafkaMessageProcessor<MessageRelayRequest> {
 
-    private static final String SEQ_KEY_PREFIX = "channel:seq:";
-
-    private final StringRedisTemplate redisTemplate;
+    private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final MessageRepository messageRepository;
     private final OutboxEventWriter outboxEventWriter;
 
@@ -37,18 +35,14 @@ public class MessageRelayHandler implements KafkaMessageProcessor<MessageRelayRe
     @Override
     @Transactional
     public void handle(MessageRelayRequest request) {
-        // 1. 채팅방 seq 생성
-        String seqKey = SEQ_KEY_PREFIX + request.channelId();
-        Long seq = redisTemplate.opsForValue().increment(seqKey);
-        if (seq == null) {
-            throw new IllegalStateException("Failed to generate seq for room: " + request.channelId());
-        }
+        // 1. Snowflake ID 발급
+        long messageId = snowflakeIdGenerator.nextId();
+        long now = System.currentTimeMillis();
 
         // 2. 메시지 저장
-        long now = System.currentTimeMillis();
         MessageEntity messageEntity = MessageEntity.of(
             request.channelId(),
-            seq,
+            messageId,
             UUID.fromString(request.senderId()),
             request.senderName(),
             request.content()
@@ -56,8 +50,10 @@ public class MessageRelayHandler implements KafkaMessageProcessor<MessageRelayRe
         messageRepository.save(messageEntity);
 
         // 3. Outbox 저장 (같은 트랜잭션 — 메시지 저장과 원자적으로 묶임)
-        ContentMessage contentMessage = new ContentMessage(
-            seq, request.channelId(), request.senderId(), request.senderName(), request.content(), seq, now
+        // DB는 Long, WS/API는 String으로 직렬화해 JS Number 정밀도 문제 방지
+        ContentMessage contentMessage = ContentMessage.of(
+            String.valueOf(messageId), request.channelId(), request.senderId(), request.senderName(),
+            request.content(), now
         );
         outboxEventWriter.write(contentMessage);
     }

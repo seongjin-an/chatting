@@ -4,7 +4,7 @@ import com.chat.fanout.kafka.message.KafkaMessage;
 import java.util.List;
 
 public record MessageFanoutRequest(
-    Long messageId,
+    String messageId,
     Long channelId,
     String senderId,
     String senderName,

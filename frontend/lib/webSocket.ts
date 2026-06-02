@@ -1,23 +1,45 @@
-/**
- * 연결 / 해제 / 하트비트
- * hooks/useWebSocket.ts 에서 참조함.
- */
-
 import { useWebSocketStore } from "@/store/webSocketStore";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8080/ws";
 const HEARTBEAT_INTERVAL_MS = 30_000;
+const INITIAL_RETRY_DELAY_MS = 1_000;
+const MAX_RETRY_DELAY_MS = 30_000;
 
 let socket: WebSocket | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+let currentToken: string | null = null;
+let retryDelay = INITIAL_RETRY_DELAY_MS;
+let intentionalClose = false;
+let hasEverConnected = false;
 
 export function connectWebSocket(token: string) {
-  if (socket && socket.readyState === WebSocket.OPEN) return;
+  if (socket?.readyState === WebSocket.OPEN) return;
+  intentionalClose = false;
+  currentToken = token;
+  retryDelay = INITIAL_RETRY_DELAY_MS;
+  doConnect();
+}
 
-  socket = new WebSocket(`${WS_URL}?token=${token}`);
+function doConnect() {
+  if (!currentToken) return;
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
+  }
+
+  socket = new WebSocket(`${WS_URL}?token=${currentToken}`);
 
   socket.onopen = () => {
+    const isReconnect = hasEverConnected;
+    hasEverConnected = true;
+    retryDelay = INITIAL_RETRY_DELAY_MS;
     useWebSocketStore.getState().setConnected(true);
+    if (isReconnect) {
+      // 재연결 시 누락 메시지를 REST 히스토리로 보정
+      useWebSocketStore.getState().onReconnect();
+    }
     startHeartbeat();
   };
 
@@ -25,6 +47,9 @@ export function connectWebSocket(token: string) {
     useWebSocketStore.getState().setConnected(false);
     stopHeartbeat();
     socket = null;
+    if (!intentionalClose && currentToken) {
+      scheduleReconnect();
+    }
   };
 
   socket.onerror = () => {
@@ -41,7 +66,19 @@ export function connectWebSocket(token: string) {
   };
 }
 
+function scheduleReconnect() {
+  const delay = retryDelay;
+  retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY_MS);
+  retryTimer = setTimeout(doConnect, delay);
+}
+
 export function disconnectWebSocket() {
+  intentionalClose = true;
+  hasEverConnected = false;
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
+  }
   stopHeartbeat();
   socket?.close();
   socket = null;

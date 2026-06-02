@@ -4,7 +4,7 @@ import com.chat.common.ContentMessage;
 import java.util.List;
 
 public record OutboxPayload(
-    Long messageId,
+    String messageId,
     Long channelId,
     String senderId,
     String senderName,

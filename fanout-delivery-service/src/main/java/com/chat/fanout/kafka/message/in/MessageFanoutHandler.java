@@ -41,7 +41,6 @@ public class MessageFanoutHandler implements KafkaMessageProcessor<MessageFanout
             request.senderId(),
             request.senderName(),
             request.content(),
-            request.messageId(),
             request.createdAt()
         );
 

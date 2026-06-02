@@ -10,7 +10,7 @@ import lombok.Getter;
 @Getter
 public class Message {
     private final Long channelId;
-    private final Long messageId;
+    private final String messageId; // DB는 Long(BIGINT), JSON 직렬화는 String으로 정밀도 유지
     private final String userId;
     private final String userName;
     private final String content;
@@ -22,7 +22,7 @@ public class Message {
             : System.currentTimeMillis();
         return new Message(
             entity.getChannelId(),
-            entity.getMessageId(),
+            String.valueOf(entity.getMessageId()),
             entity.getUserId().toString(),
             entity.getUserName(),
             entity.getContent(),

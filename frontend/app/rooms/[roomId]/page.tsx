@@ -9,7 +9,7 @@ import { type MessageHistory } from "@/lib/api";
 import { type ContentMessage, useWebSocketStore } from "@/store/webSocketStore";
 
 type DisplayMessage = {
-  seq: number;
+  messageId: string;
   senderId: string;
   senderName: string;
   content: string;
@@ -17,10 +17,9 @@ type DisplayMessage = {
 };
 
 function toDisplay(msg: MessageHistory | ContentMessage): DisplayMessage {
-  // MessageHistory(REST)는 userId, ContentMessage(WS)는 senderId — messageId는 양쪽 다 있어서 판별 불가
   if ("userId" in msg) {
     return {
-      seq: msg.messageId,
+      messageId: msg.messageId,
       senderId: msg.userId,
       senderName: msg.userName,
       content: msg.content,
@@ -28,7 +27,7 @@ function toDisplay(msg: MessageHistory | ContentMessage): DisplayMessage {
     };
   }
   return {
-    seq: msg.seq,
+    messageId: msg.messageId,
     senderId: msg.senderId,
     senderName: msg.senderName,
     content: msg.content,
@@ -42,7 +41,7 @@ export default function ChatRoomPage() {
   const { roomId: channelId } = useParams<{ roomId: string }>();
   const { connected, messages: wsMessages, sendMessage } = useChat(channelId);
   const { data: historyResult, refetch: refetchHistory } = useChannelMessages(Number(channelId));
-  const refetchTrigger = useWebSocketStore((s) => s.refetchTriggers[channelId] ?? 0);
+  const reconnectCount = useWebSocketStore((s) => s.reconnectCount);
   const joinChannel = useJoinChannel();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -51,10 +50,10 @@ export default function ChatRoomPage() {
     if (!isLoading && !isAuthenticated) router.replace("/login");
   }, [isAuthenticated, isLoading, router]);
 
-  // WS 갭 감지 시 REST로 누락 구간 복구
+  // 재연결 시 누락 메시지 보정
   useEffect(() => {
-    if (refetchTrigger > 0) refetchHistory();
-  }, [refetchTrigger]);
+    if (reconnectCount > 0) refetchHistory();
+  }, [reconnectCount]);
 
   // 방 입장 시 자동 참여
   useEffect(() => {
@@ -66,19 +65,18 @@ export default function ChatRoomPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [wsMessages, historyResult]);
 
-  // 히스토리 + WS 메시지를 createdAt 기준으로 합산, seq 중복 제거
+  // 히스토리 + WS 메시지를 합산, messageId 중복 제거 후 createdAt 정렬
   const allMessages = useMemo<DisplayMessage[]>(() => {
     const history = (historyResult?.messages ?? []).map(toDisplay);
     const realtime = wsMessages.map(toDisplay);
-    const seqSet = new Set<number>();
+    const seen = new Set<string>();
     const merged: DisplayMessage[] = [];
     for (const msg of [...history, ...realtime]) {
-      if (!seqSet.has(msg.seq)) {
-        seqSet.add(msg.seq);
+      if (!seen.has(msg.messageId)) {
+        seen.add(msg.messageId);
         merged.push(msg);
       }
     }
-    // seq는 Redis 재시작 시 초기화될 수 있으므로 createdAt 기준 정렬
     return merged.sort((a, b) => a.createdAt - b.createdAt);
   }, [historyResult, wsMessages]);
 
@@ -129,7 +127,7 @@ export default function ChatRoomPage() {
 
           if (mine) {
             return (
-              <div key={msg.seq} className={isContinued ? "" : "mt-2"}>
+              <div key={msg.messageId} className={isContinued ? "" : "mt-2"}>
                 <div className="flex items-end gap-1.5 ml-auto w-fit max-w-[70%]">
                   <span className="text-xs text-gray-400 shrink-0 mb-0.5">{time}</span>
                   <div className="px-3.5 py-2 rounded-2xl rounded-br-sm bg-indigo-500 text-white text-sm leading-relaxed break-words">
@@ -141,7 +139,7 @@ export default function ChatRoomPage() {
           }
 
           return (
-            <div key={msg.seq} className={`flex items-end gap-2 ${isContinued ? "" : "mt-2"}`}>
+            <div key={msg.messageId} className={`flex items-end gap-2 ${isContinued ? "" : "mt-2"}`}>
               {!isContinued ? (
                 <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0 self-start">
                   {initial}

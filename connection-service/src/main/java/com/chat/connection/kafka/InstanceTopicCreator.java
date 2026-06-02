@@ -1,6 +1,7 @@
 package com.chat.connection.kafka;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -21,6 +22,7 @@ public class InstanceTopicCreator {
     private final String group;
     private final String partitions;
     private final String replicasFactor;
+    private final String retentionMs;
 
     public InstanceTopicCreator(
         KafkaAdmin kafkaAdmin,
@@ -28,7 +30,8 @@ public class InstanceTopicCreator {
         @Value("${chatting.kafka.listeners.connection.topic}") String topic,
         @Value("${chatting.kafka.listeners.connection.group}") String group,
         @Value("${chatting.kafka.listeners.connection.partitions}") String partitions,
-        @Value("${chatting.kafka.listeners.connection.replicasFactor}") String replicasFactor
+        @Value("${chatting.kafka.listeners.connection.replicasFactor}") String replicasFactor,
+        @Value("${chatting.kafka.listeners.connection.retentionMs}") String retentionMs
     ) {
         this.kafkaAdmin = kafkaAdmin;
         this.serverId = serverId;
@@ -36,6 +39,7 @@ public class InstanceTopicCreator {
         this.group = group;
         this.partitions = partitions;
         this.replicasFactor = replicasFactor;
+        this.retentionMs = retentionMs;
 
         initTopic();
     }
@@ -44,7 +48,8 @@ public class InstanceTopicCreator {
         String instanceTopic = getInstanceTopic();
 
         try (AdminClient adminClient = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
-            NewTopic newTopic = new NewTopic(instanceTopic, Integer.parseInt(partitions), Short.parseShort(replicasFactor));
+            NewTopic newTopic = new NewTopic(instanceTopic, Integer.parseInt(partitions), Short.parseShort(replicasFactor))
+                .configs(Map.of("retention.ms", retentionMs));
 
             CreateTopicsResult topicsResult = adminClient.createTopics(List.of(newTopic));
 
