@@ -43,6 +43,7 @@ kill_service() {
 
 # ── Spring Boot 서비스 종료 (역순) ───────────────────────────────────────────
 kill_service "frontend"
+kill_service "fanout-delivery-service"
 kill_service "message-service"
 kill_service "connection-service"
 kill_service "user-service"

@@ -1,28 +1,13 @@
 server:
-  port: ${SERVER_PORT:8083}
+  port: ${SERVER_PORT:8084}
 
 spring:
   application:
-    name: message-service
-
-  datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:23306/chatting?serverTimezone=UTC&characterEncoding=UTF-8&createDatabaseIfNotExist=true}
-    username: ${DB_USERNAME:dev_user}
-    password: ${DB_PASSWORD:dev_password}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
-
+    name: fanout-delivery-service
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
@@ -35,13 +20,7 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest
       enable-auto-commit: false
-
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
-  instance:
-    prefer-ip-address: true
+      fetch-max-wait: 10ms
 
 management:
   endpoints:
@@ -50,15 +29,13 @@ management:
         include: health, info
 
 chatting:
-  outbox:
-    retention-days: 1   # Debezium 발행 완료 기준 1일 후 정리
   kafka:
     topics:
-      message-fanout: message-fanout
+      connection-instance-prefix: connection-instance-
     listeners:
       message:
-        topic: message-relay
-        group: message-relay-group
+        topic: message-fanout
+        group: message-fanout-group
         concurrency: 3
         partitions: 3
         replicasFactor: 1

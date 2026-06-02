@@ -28,6 +28,7 @@ public class CacheService {
             String connectionRedisKey = getConnectionRedisKey(connectionKey);
 
             redisTemplate.opsForSet().add(userRedisKey, connectionKey);
+            redisTemplate.expire(userRedisKey, Duration.ofSeconds(ttlSeconds));
 
             String value = jsonUtil.toJson(connectionInfo).orElseThrow();
             redisTemplate.opsForValue().set(connectionRedisKey, value, Duration.ofSeconds(ttlSeconds));
@@ -37,8 +38,9 @@ public class CacheService {
         }
     }
 
-    // 하트비트 수신 시 호출 — TTL 갱신
-    public void refreshConnectionTtl(String connectionKey) {
+    // 하트비트 수신 시 호출 — connection key, user Set 모두 TTL 갱신
+    public void refreshConnectionTtl(UserId userId, String connectionKey) {
+        redisTemplate.expire(getUserRedisKey(userId), Duration.ofSeconds(ttlSeconds));
         redisTemplate.expire(getConnectionRedisKey(connectionKey), Duration.ofSeconds(ttlSeconds));
     }
 

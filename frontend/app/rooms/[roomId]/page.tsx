@@ -66,7 +66,7 @@ export default function ChatRoomPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [wsMessages, historyResult]);
 
-  // 히스토리 + WS 메시지를 seq 기준으로 합산, 중복 제거
+  // 히스토리 + WS 메시지를 createdAt 기준으로 합산, seq 중복 제거
   const allMessages = useMemo<DisplayMessage[]>(() => {
     const history = (historyResult?.messages ?? []).map(toDisplay);
     const realtime = wsMessages.map(toDisplay);
@@ -78,7 +78,8 @@ export default function ChatRoomPage() {
         merged.push(msg);
       }
     }
-    return merged.sort((a, b) => a.seq - b.seq);
+    // seq는 Redis 재시작 시 초기화될 수 있으므로 createdAt 기준 정렬
+    return merged.sort((a, b) => a.createdAt - b.createdAt);
   }, [historyResult, wsMessages]);
 
   function handleSend(e: FormEvent) {

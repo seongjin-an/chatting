@@ -34,6 +34,12 @@ public class OutboxEventEntity {
     @Column(columnDefinition = "TEXT")
     private String payload;
 
+    @Column(name = "destination_topic", nullable = false)
+    private String destinationTopic;
+
+    @Column(name = "partition_key", nullable = false)
+    private String partitionKey;
+
     @Enumerated(EnumType.STRING)
     private OutboxStatus status;
     private int retryCount;
@@ -48,19 +54,24 @@ public class OutboxEventEntity {
     @Version
     private Long version;
 
-    public static OutboxEventEntity create(String aggregateType, String aggregateId,
-                                           String eventType, String payload) {
+    public static OutboxEventEntity create(
+        String aggregateType, String aggregateId,
+        String eventType, String payload,
+        String destinationTopic, String partitionKey
+    ) {
         OutboxEventEntity e = new OutboxEventEntity();
-        e.eventId       = UUID.randomUUID();
+        e.eventId = UUID.randomUUID();
         e.aggregateType = aggregateType;
-        e.aggregateId   = aggregateId;
-        e.eventType     = eventType;
-        e.payload       = payload;
-        e.status        = OutboxStatus.PENDING;
-        e.retryCount    = 0;
-        e.createdAt     = Instant.now();
-        e.traceId       = MDC.get("traceId");
-        e.spanId        = MDC.get("spanId");
+        e.aggregateId = aggregateId;
+        e.eventType = eventType;
+        e.payload = payload;
+        e.destinationTopic = destinationTopic;
+        e.partitionKey = partitionKey;
+        e.status = OutboxStatus.PENDING;
+        e.retryCount = 0;
+        e.createdAt = Instant.now();
+        e.traceId = MDC.get("traceId");
+        e.spanId = MDC.get("spanId");
         return e;
     }
 
@@ -69,13 +80,13 @@ public class OutboxEventEntity {
     }
 
     public void markProcessed() {
-        this.status      = OutboxStatus.PROCESSED;
+        this.status = OutboxStatus.PROCESSED;
         this.processedAt = Instant.now();
     }
 
     public void markFailed(String error) {
-        this.status     = OutboxStatus.FAILED;
+        this.status = OutboxStatus.FAILED;
         this.retryCount = this.retryCount + 1;
-        this.lastError  = error;
+        this.lastError = error;
     }
 }

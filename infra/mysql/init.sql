@@ -8,4 +8,5 @@ CREATE DATABASE IF NOT EXISTS chat_message
 
 GRANT ALL PRIVILEGES ON chatting.*     TO 'dev_user'@'%';
 GRANT ALL PRIVILEGES ON chat_message.* TO 'dev_user'@'%';
+GRANT REPLICATION SLAVE, REPLICATION CLIENT, RELOAD ON *.* TO 'dev_user'@'%';
 FLUSH PRIVILEGES;

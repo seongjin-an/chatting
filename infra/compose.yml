@@ -7,6 +7,7 @@ services:
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
       --skip-character-set-client-handshake
+      --log-bin=mysql-bin --binlog-format=ROW --binlog-row-image=FULL --server-id=1
     environment:
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_USER: dev_user
@@ -44,6 +45,25 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
+  kafka-connect:
+    image: quay.io/debezium/connect:3.1
+    container_name: kafka-connect
+    restart: unless-stopped
+    ports:
+      - "28083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:29092
+      GROUP_ID: chatting-outbox-connector
+      CONFIG_STORAGE_TOPIC: debezium-configs
+      OFFSET_STORAGE_TOPIC: debezium-offsets
+      STATUS_STORAGE_TOPIC: debezium-status
+      KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mysql:
+        condition: service_started
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest

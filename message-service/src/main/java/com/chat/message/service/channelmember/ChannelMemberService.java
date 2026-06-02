@@ -16,16 +16,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChannelMemberService {
 
     private final ChannelMemberRepository channelMemberRepository;
+    private final ChannelMemberCacheService channelMemberCacheService;
 
     @Transactional
     public void createChannelMember(ChannelMemberDto dto) {
         ChannelMemberEntity entity = dto.toEntity();
         channelMemberRepository.save(entity);
+        channelMemberCacheService.invalidate(dto.getChannelId());
     }
 
     @Transactional
     public void removeChannelMember(ChannelMemberDto dto) {
         channelMemberRepository.deleteByChannelIdAndUserId(dto.getChannelId(), UUID.fromString(dto.getUserId()));
+        channelMemberCacheService.invalidate(dto.getChannelId());
     }
 
     public List<ChannelMember> getChannelMembers(Long channelId) {

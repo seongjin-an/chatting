@@ -1,0 +1,15 @@
+package com.chat.message.kafka.message.out;
+
+import java.util.List;
+
+public record MessageFanoutPayload(
+    String eventId,
+    Long channelId,
+    Long messageId,
+    String senderId,
+    String senderName,
+    String content,
+    String traceId,
+    Long createdAt,
+    List<String> recipientIds
+) {}

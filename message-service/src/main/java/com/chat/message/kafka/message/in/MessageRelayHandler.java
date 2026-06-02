@@ -38,7 +38,8 @@ public class MessageRelayHandler implements KafkaMessageProcessor<MessageRelayRe
     @Transactional
     public void handle(MessageRelayRequest request) {
         // 1. 채팅방 seq 생성
-        Long seq = redisTemplate.opsForValue().increment(SEQ_KEY_PREFIX + request.channelId());
+        String seqKey = SEQ_KEY_PREFIX + request.channelId();
+        Long seq = redisTemplate.opsForValue().increment(seqKey);
         if (seq == null) {
             throw new IllegalStateException("Failed to generate seq for room: " + request.channelId());
         }

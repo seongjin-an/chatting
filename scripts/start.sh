@@ -68,6 +68,7 @@ if [[ "${SKIP_BUILD:-}" != "true" ]]; then
             :user-service:bootJar \
             :connection-service:bootJar \
             :message-service:bootJar \
+            :fanout-delivery-service:bootJar \
             -x test --parallel -q
   success "Build complete"
 fi
@@ -75,17 +76,25 @@ fi
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 3. Spring Boot 서비스 기동
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EUREKA_JAR=$(find "$ROOT/eureka-server/build/libs" -name "*.jar" ! -name "*plain*" | head -1)
-GW_JAR=$(find "$ROOT/api-gateway/build/libs"       -name "*.jar" ! -name "*plain*" | head -1)
-USER_JAR=$(find "$ROOT/user-service/build/libs"    -name "*.jar" ! -name "*plain*" | head -1)
-CONN_JAR=$(find "$ROOT/connection-service/build/libs" -name "*.jar" ! -name "*plain*" | head -1)
-MSG_JAR=$(find "$ROOT/message-service/build/libs"  -name "*.jar" ! -name "*plain*" | head -1)
+EUREKA_JAR=$(find "$ROOT/eureka-server/build/libs"             -name "*.jar" ! -name "*plain*" | head -1)
+GW_JAR=$(find "$ROOT/api-gateway/build/libs"                   -name "*.jar" ! -name "*plain*" | head -1)
+USER_JAR=$(find "$ROOT/user-service/build/libs"                -name "*.jar" ! -name "*plain*" | head -1)
+CONN_JAR=$(find "$ROOT/connection-service/build/libs"          -name "*.jar" ! -name "*plain*" | head -1)
+MSG_JAR=$(find "$ROOT/message-service/build/libs"              -name "*.jar" ! -name "*plain*" | head -1)
+FANOUT_JAR=$(find "$ROOT/fanout-delivery-service/build/libs"   -name "*.jar" ! -name "*plain*" | head -1)
 
-start_spring "eureka-server"     "$EUREKA_JAR" 8761
-start_spring "api-gateway"       "$GW_JAR"     8080
-start_spring "user-service"      "$USER_JAR"   8081
-start_spring "connection-service" "$CONN_JAR"  8082
-start_spring "message-service"   "$MSG_JAR"    8083
+start_spring "eureka-server"           "$EUREKA_JAR"  8761
+start_spring "api-gateway"             "$GW_JAR"      8080
+start_spring "user-service"            "$USER_JAR"    8081
+start_spring "connection-service"      "$CONN_JAR"    8082
+start_spring "message-service"         "$MSG_JAR"     8083
+start_spring "fanout-delivery-service" "$FANOUT_JAR"  8084
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Debezium 커넥터 등록
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+info "Registering Debezium connector..."
+bash "$ROOT/infra/register-debezium.sh"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 4. 프론트엔드

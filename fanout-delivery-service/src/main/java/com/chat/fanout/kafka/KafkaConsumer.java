@@ -1,0 +1,31 @@
+package com.chat.fanout.kafka;
+
+import com.chat.fanout.kafka.message.KafkaMessageDispatcher;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@RequiredArgsConstructor
+@Service
+public class KafkaConsumer {
+
+    private final KafkaMessageDispatcher kafkaMessageDispatcher;
+
+    @KafkaListener(
+        topics = "${chatting.kafka.listeners.message.topic}",
+        groupId = "${chatting.kafka.listeners.message.group}",
+        concurrency = "${chatting.kafka.listeners.message.concurrency}")
+    public void consume(ConsumerRecord<String, String> record, Acknowledgment acknowledgment) {
+        try {
+            kafkaMessageDispatcher.dispatch(record.value());
+        } catch (Exception e) {
+            log.error("[FanoutConsumer] 처리 실패 key={}", record.key(), e);
+        } finally {
+            acknowledgment.acknowledge();
+        }
+    }
+}

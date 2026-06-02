@@ -1,6 +1,7 @@
 package com.chat.connection.websocket.message.handler;
 
 import com.chat.common.Constant;
+import com.chat.common.UserId;
 import com.chat.connection.service.CacheService;
 import com.chat.connection.websocket.message.WebSocketMessageProcessor;
 import com.chat.connection.websocket.message.payload.HeartbeatPayload;
@@ -28,6 +29,7 @@ public class WebSocketHeartbeatHandler implements WebSocketMessageProcessor<Hear
     @Override
     public void handle(WebSocketSession session, HeartbeatPayload message) {
         String connectionKey = (String) session.getAttributes().get(Constant.WEBSOCKET_CONNECTION_KEY);
-        cacheService.refreshConnectionTtl(connectionKey);
+        UserId userId = UserId.of((String) session.getAttributes().get(Constant.USER_ID));
+        cacheService.refreshConnectionTtl(userId, connectionKey);
     }
 }
