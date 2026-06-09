@@ -66,7 +66,7 @@ start_spring() {
       "-Dotel.exporter.otlp.protocol=grpc"
       "-Dotel.traces.exporter=otlp"
       "-Dotel.metrics.exporter=none"
-      "-Dotel.logs.exporter=none"
+      "-Dotel.logs.exporter=otlp"
       "-Dotel.propagators=tracecontext,baggage"
     )
   fi

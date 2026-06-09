@@ -14,5 +14,4 @@ infra/otel/
 infra/.data/tempo/
 infra/.data/loki/
 infra/.data/prometheus/
-infra/.data/promtail/
 infra/.data/grafana/

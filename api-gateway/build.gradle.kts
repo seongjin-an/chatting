@@ -15,7 +15,8 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 
     implementation("io.micrometer:micrometer-registry-prometheus")
-    compileOnly("io.opentelemetry:opentelemetry-api")
+    implementation("io.opentelemetry:opentelemetry-api")
+    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }

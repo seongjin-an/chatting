@@ -138,18 +138,6 @@ services:
     ports:
       - "3100:3100"
 
-  promtail:
-    image: grafana/promtail:3.2.0
-    container_name: chatting-promtail
-    restart: unless-stopped
-    command: ["-config.file=/etc/promtail/config.yml"]
-    volumes:
-      - ./observability/promtail-config.yml:/etc/promtail/config.yml:ro
-      - ../logs:/var/log/chat-msa:ro          # 호스트 logs/ 디렉토리
-      - ./.data/promtail:/tmp/positions
-    depends_on:
-      - loki
-
   prometheus:
     image: prom/prometheus:v2.55.0
     container_name: chatting-prometheus
