@@ -26,4 +26,16 @@ public class KafkaConsumer {
 
         acknowledgment.acknowledge();
     }
+
+    @KafkaListener(
+        topics = "${chatting.kafka.listeners.read.topic}",
+        groupId = "${chatting.kafka.listeners.read.group}",
+        concurrency = "${chatting.kafka.listeners.read.concurrency}")
+    public void consumeReadRelay(
+        ConsumerRecord<String, String> consumerRecord, Acknowledgment acknowledgment) {
+
+        kafkaMessageDispatcher.dispatch(consumerRecord.value());
+
+        acknowledgment.acknowledge();
+    }
 }

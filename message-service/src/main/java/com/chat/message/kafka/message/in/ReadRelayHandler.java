@@ -1,0 +1,56 @@
+package com.chat.message.kafka.message.in;
+
+import com.chat.common.KeyPrefix;
+import com.chat.message.domain.ChannelMemberEntity;
+import com.chat.message.kafka.KafkaProducer;
+import com.chat.message.kafka.message.KafkaMessageProcessor;
+import com.chat.message.kafka.message.KafkaMessageType;
+import com.chat.message.kafka.message.out.ReadFanoutPayload;
+import com.chat.message.repository.channelmember.ChannelMemberRepository;
+import com.chat.message.service.channelmember.ChannelMemberCacheService;
+import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+@Slf4j
+@RequiredArgsConstructor
+@Transactional
+@Component
+public class ReadRelayHandler implements KafkaMessageProcessor<ReadRelayRequest> {
+
+    private final ChannelMemberRepository channelMemberRepository;
+    private final ChannelMemberCacheService channelMemberCacheService;
+    private final StringRedisTemplate redisTemplate;
+    private final KafkaProducer kafkaProducer;
+
+    @Override
+    public KafkaMessageType getSupportedType() {
+        return KafkaMessageType.READ_MESSAGE_RELAY;
+    }
+
+    @Override
+    public Class<ReadRelayRequest> getPayloadType() {
+        return ReadRelayRequest.class;
+    }
+
+    @Override
+    public void handle(ReadRelayRequest message) {
+        ChannelMemberEntity channelMember = channelMemberRepository
+            .findByChannelIdAndUserId(message.channelId(), UUID.fromString(message.userId()))
+            .orElseThrow();
+        channelMember.updateLastReadMessageId(message.messageId());
+
+        String redisKey = KeyPrefix.READ_LAST_MESSAGE + message.channelId() + ":" + message.userId();
+        redisTemplate.opsForValue().set(redisKey, message.messageId().toString());
+
+        List<String> recipientIds = channelMemberCacheService.getRecipientIds(message.channelId());
+        ReadFanoutPayload payload = new ReadFanoutPayload(
+            message.channelId(), message.userId(), message.messageId(), recipientIds);
+
+        kafkaProducer.sendReadFanout(payload);
+    }
+}

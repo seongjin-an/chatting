@@ -30,16 +30,24 @@ public class ChannelMemberEntity {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @Column(name = "last_read_message_id")
+    private Long lastReadMessageId;
+
     private LocalDateTime joinedAt;
 
-    public static ChannelMemberEntity of(Long channelId, UUID userId) {
-        return new ChannelMemberEntity(channelId, userId, LocalDateTime.now());
+    public static ChannelMemberEntity create(Long channelId, UUID userId) {
+        return new ChannelMemberEntity(channelId, userId, null, LocalDateTime.now());
+    }
+
+    public void updateLastReadMessageId(Long lastReadMessageId) {
+        this.lastReadMessageId = lastReadMessageId;
     }
 
     @AllArgsConstructor
     @NoArgsConstructor
     @Getter
     public static class ChannelMemberEntityId {
+
         private Long channelId;
         private UUID userId;
 

@@ -19,11 +19,25 @@ public class KafkaConsumer {
         topics = "${chatting.kafka.listeners.message.topic}",
         groupId = "${chatting.kafka.listeners.message.group}",
         concurrency = "${chatting.kafka.listeners.message.concurrency}")
-    public void consume(ConsumerRecord<String, String> record, Acknowledgment acknowledgment) {
+    public void consumeMessageFanout(ConsumerRecord<String, String> record, Acknowledgment acknowledgment) {
         try {
             kafkaMessageDispatcher.dispatch(record.value());
         } catch (Exception e) {
             log.error("[FanoutConsumer] 처리 실패 key={}", record.key(), e);
+        } finally {
+            acknowledgment.acknowledge();
+        }
+    }
+
+    @KafkaListener(
+        topics = "${chatting.kafka.listeners.read.topic}",
+        groupId = "${chatting.kafka.listeners.read.group}",
+        concurrency = "${chatting.kafka.listeners.read.concurrency}")
+    public void consumeReadFanout(ConsumerRecord<String, String> record, Acknowledgment acknowledgment) {
+        try {
+            kafkaMessageDispatcher.dispatch(record.value());
+        } catch (Exception e) {
+            log.error("[FanoutConsumer] read 처리 실패 key={}", record.key(), e);
         } finally {
             acknowledgment.acknowledge();
         }

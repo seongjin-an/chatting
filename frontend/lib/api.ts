@@ -105,4 +105,9 @@ export const channelApi = {
       `/channels/${channelId}/messages`,
       { params: { ...(beforeSeq != null && { beforeSeq }), size } }
     ),
+
+  getReadState: (channelId: number) =>
+    apiClient.get<ApiResponse<Record<string, string | null>>>(
+      `/channels/${channelId}/members/read-state`
+    ),
 };

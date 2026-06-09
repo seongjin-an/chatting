@@ -6,6 +6,7 @@ import com.chat.connection.kafka.message.KafkaMessageProcessor;
 import com.chat.connection.kafka.message.KafkaMessageType;
 import com.chat.connection.websocket.WebSocketSessionRegistry;
 import com.chat.connection.websocket.message.WebSocketOutboundEnvelope;
+import com.chat.connection.websocket.message.payload.ReadEventWsPayload;
 import java.io.IOException;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -17,44 +18,47 @@ import org.springframework.web.socket.WebSocketSession;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class ContentMessageResponseHandler implements KafkaMessageProcessor<ContentMessageResponse> {
+public class ReadEventHandler implements KafkaMessageProcessor<ReadEvent> {
 
     private final WebSocketSessionRegistry webSocketSessionRegistry;
     private final JsonUtil jsonUtil;
 
     @Override
     public KafkaMessageType getSupportedType() {
-        return KafkaMessageType.CONTENT_MESSAGE_RESPONSE;
+        return KafkaMessageType.READ_EVENT;
     }
 
     @Override
-    public Class<ContentMessageResponse> getPayloadType() {
-        return ContentMessageResponse.class;
+    public Class<ReadEvent> getPayloadType() {
+        return ReadEvent.class;
     }
 
     @Override
-    public void handle(ContentMessageResponse message) {
+    public void handle(ReadEvent message) {
         UserId userId = UserId.of(message.userId());
         Map<String, WebSocketSession> userSessions = webSocketSessionRegistry.getSessions(userId);
 
         if (userSessions.isEmpty()) {
-            log.debug("No active sessions for userId={}", message.userId());
             return;
         }
 
-        WebSocketOutboundEnvelope envelope = new WebSocketOutboundEnvelope("CONTENT_MESSAGE", message.message());
+        // 브라우저에 전달할 페이로드: 누가(readerId) 어느 채널(channelId)을 어디까지(lastReadMessageId) 읽었는지
+        WebSocketOutboundEnvelope envelope = new WebSocketOutboundEnvelope(
+            "READ_EVENT",
+            new ReadEventWsPayload(message.channelId(), message.readerId(), message.lastReadMessageId())
+        );
         String payload = jsonUtil.toJson(envelope).orElseThrow();
         TextMessage textMessage = new TextMessage(payload);
 
-        for (WebSocketSession session : userSessions.values()) {
+        userSessions.values().forEach(session -> {
             try {
                 if (session.isOpen()) {
                     session.sendMessage(textMessage);
                 }
             } catch (IOException e) {
-                log.error("Failed to deliver message to userId={}, sessionId={}: {}",
+                log.error("Failed to deliver READ_EVENT to userId={}, sessionId={}: {}",
                     message.userId(), session.getId(), e.getMessage());
             }
-        }
+        });
     }
 }

@@ -3,6 +3,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { channelApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { useWebSocketStore } from "@/store/webSocketStore";
+import { useEffect } from "react";
 
 export const CHANNELS_KEY = ["channels"] as const;
 export const MY_CHANNELS_KEY = ["channels", "me"] as const;
@@ -59,4 +61,13 @@ export function useChannelMessages(channelId: number) {
     },
     staleTime: Infinity,
   });
+}
+
+export function useInitialReadState(channelId: string) {
+  const setReadState = useWebSocketStore((s) => s.setReadState);
+  useEffect(() => {
+    channelApi.getReadState(Number(channelId)).then((res) => {
+      setReadState(channelId, res.data.data);
+    });
+  }, [channelId]);
 }

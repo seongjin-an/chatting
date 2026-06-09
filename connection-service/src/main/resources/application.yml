@@ -46,6 +46,7 @@ chatting:
   kafka:
     topics:
       message: message-relay
+      read: read-relay
     listeners:
       connection:
         topic: connection-instance

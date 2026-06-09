@@ -9,6 +9,7 @@ import lombok.Getter;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class ChannelMemberDto {
+
     private final Long channelId;
     private final String userId;
 
@@ -17,6 +18,6 @@ public class ChannelMemberDto {
     }
 
     public ChannelMemberEntity toEntity() {
-        return ChannelMemberEntity.of(channelId, UUID.fromString(userId));
+        return ChannelMemberEntity.create(channelId, UUID.fromString(userId));
     }
 }

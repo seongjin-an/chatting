@@ -3,7 +3,9 @@ package com.chat.message.service.channelmember;
 import com.chat.message.domain.ChannelMemberEntity;
 import com.chat.message.repository.channelmember.ChannelMemberRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,5 +38,14 @@ public class ChannelMemberService {
         return channelMembers.stream()
             .map(ChannelMember::of)
             .toList();
+    }
+
+    public Map<String, Long> getReadState(Long channelId) {
+        return channelMemberRepository.findByChannelId(channelId)
+            .stream()
+            .collect(Collectors.toMap(
+                m -> m.getUserId().toString(),
+                m -> m.getLastReadMessageId() != null ? m.getLastReadMessageId() : 0L
+            ));
     }
 }

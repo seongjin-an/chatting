@@ -5,6 +5,7 @@ import com.chat.message.service.channelmember.ChannelMember;
 import com.chat.message.service.channelmember.ChannelMemberDto;
 import com.chat.message.service.channelmember.ChannelMemberService;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -46,5 +47,10 @@ public class ChannelMemberController {
     @GetMapping
     public ApiResponse<List<ChannelMember>> getMembers(@PathVariable Long channelId) {
         return ApiResponse.ok(channelMemberService.getChannelMembers(channelId));
+    }
+
+    @GetMapping("/read-state")
+    public ApiResponse<Map<String, Long>> getReadState(@PathVariable Long channelId) {
+        return ApiResponse.ok(channelMemberService.getReadState(channelId));
     }
 }

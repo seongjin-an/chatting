@@ -58,8 +58,8 @@ function doConnect() {
 
   socket.onmessage = (event) => {
     try {
-      const message = JSON.parse(event.data);
-      useWebSocketStore.getState().addMessage(message);
+      const envelope = JSON.parse(event.data);
+      useWebSocketStore.getState().handleInbound(envelope);
     } catch {
       console.warn("[WS] Failed to parse message:", event.data);
     }
