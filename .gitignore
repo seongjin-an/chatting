@@ -1,0 +1,18 @@
+# Build
+build/
+.gradle/
+.idea/
+
+# Logs & PIDs
+logs/
+pids/
+
+# OTel Agent (별도 다운로드, git에 커밋 안 함)
+infra/otel/
+
+# Observability data
+infra/.data/tempo/
+infra/.data/loki/
+infra/.data/prometheus/
+infra/.data/promtail/
+infra/.data/grafana/

@@ -50,7 +50,7 @@ public class OutboxEventPoller {
                         contentMessage.senderId(),
                         contentMessage.senderName(),
                         contentMessage.content(),
-                        MDC.get("traceId"),
+                        MDC.get("trace_id"),
                         contentMessage.createdAt(),
                         recipientIds
                 );

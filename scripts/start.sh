@@ -8,7 +8,12 @@ PIDS="$ROOT/pids"
 # Java 21 우선 사용
 JAVA_CMD="$(/usr/libexec/java_home -v 21 2>/dev/null || /usr/libexec/java_home -v 17 2>/dev/null)/bin/java"
 
-mkdir -p "$LOGS" "$PIDS"
+# OTel Java Agent
+OTEL_AGENT_VERSION="2.8.0"
+OTEL_AGENT="$ROOT/infra/otel/opentelemetry-javaagent.jar"
+OTEL_AGENT_URL="https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${OTEL_AGENT_VERSION}/opentelemetry-javaagent.jar"
+
+mkdir -p "$LOGS" "$PIDS" "$ROOT/infra/otel"
 
 # ── 색상 ────────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
@@ -32,6 +37,17 @@ wait_port() {
   return 1
 }
 
+# ── OTel Agent 다운로드 ──────────────────────────────────────────────────────
+download_otel_agent() {
+  if [[ -f "$OTEL_AGENT" ]]; then
+    return 0
+  fi
+  info "Downloading OTel Java Agent v${OTEL_AGENT_VERSION}..."
+  curl -L --fail --progress-bar -o "$OTEL_AGENT" "$OTEL_AGENT_URL" \
+    || { error "OTel Agent download failed. Traces will be disabled."; return 0; }
+  success "OTel Agent downloaded"
+}
+
 # ── Spring Boot 기동 ─────────────────────────────────────────────────────────
 start_spring() {
   local name=$1 jar=$2 port=$3
@@ -41,8 +57,22 @@ start_spring() {
     return 0
   fi
 
+  local OTEL_OPTS=()
+  if [[ -f "$OTEL_AGENT" ]]; then
+    OTEL_OPTS=(
+      "-javaagent:${OTEL_AGENT}"
+      "-Dotel.service.name=${name}"
+      "-Dotel.exporter.otlp.endpoint=http://localhost:4317"
+      "-Dotel.exporter.otlp.protocol=grpc"
+      "-Dotel.traces.exporter=otlp"
+      "-Dotel.metrics.exporter=none"
+      "-Dotel.logs.exporter=none"
+      "-Dotel.propagators=tracecontext,baggage"
+    )
+  fi
+
   info "Starting $name ..."
-  "$JAVA_CMD" -jar "$jar" > "$LOGS/$name.log" 2>&1 &
+  "$JAVA_CMD" "${OTEL_OPTS[@]}" -jar "$jar" > "$LOGS/$name.log" 2>&1 &
   echo $! > "$PIDS/$name.pid"
   wait_port "$name" "$port"
 }
@@ -60,6 +90,8 @@ success "Infrastructure ready"
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 2. 빌드
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+download_otel_agent
+
 if [[ "${SKIP_BUILD:-}" != "true" ]]; then
   info "Building all modules..."
   cd "$ROOT"

@@ -15,6 +15,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
 
     //runtimeOnly("org.postgresql:postgresql")
+    implementation("io.micrometer:micrometer-registry-prometheus")
     runtimeOnly("com.mysql:mysql-connector-j")
 
     testImplementation("org.springframework.kafka:spring-kafka-test")

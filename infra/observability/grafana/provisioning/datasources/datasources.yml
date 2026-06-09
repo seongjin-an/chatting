@@ -1,0 +1,52 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus-uid
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: "15s"
+    version: 1
+    editable: false
+
+  - name: Tempo
+    type: tempo
+    uid: tempo-uid
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: loki-uid
+        spanStartTimeShift: "-1h"
+        spanEndTimeShift: "1h"
+        tags:
+          - key: service.name
+            value: service
+      serviceMap:
+        datasourceUid: prometheus-uid
+      nodeGraph:
+        enabled: true
+      lokiSearch:
+        datasourceUid: loki-uid
+    version: 1
+    editable: false
+
+  - name: Loki
+    type: loki
+    uid: loki-uid
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        # JSON 로그의 trace_id 필드 → Tempo 링크 생성
+        - name: TraceID
+          matcherRegex: '"trace_id":"([a-f0-9]{32})"'
+          url: "$${__value.raw}"
+          datasourceUid: tempo-uid
+          urlDisplayLabel: "Tempo에서 보기"
+    version: 1
+    editable: false

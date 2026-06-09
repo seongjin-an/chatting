@@ -27,6 +27,7 @@ subprojects {
         imports {
             mavenBom("org.springframework.boot:spring-boot-dependencies:3.3.5")
             mavenBom("org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}")
+            mavenBom("io.opentelemetry:opentelemetry-bom:1.40.0")
         }
     }
 

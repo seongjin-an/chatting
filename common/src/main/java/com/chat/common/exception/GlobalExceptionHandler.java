@@ -1,6 +1,7 @@
 package com.chat.common.exception;
 
 import com.chat.common.response.ApiResponse;
+import io.opentelemetry.api.trace.Span;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -28,7 +29,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
+        String traceId = resolveTraceId();
         return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("서버 오류가 발생했습니다."));
+                .body(ApiResponse.error("서버 오류가 발생했습니다.", traceId));
+    }
+
+    private String resolveTraceId() {
+        Span span = Span.current();
+        if (span.getSpanContext().isValid()) {
+            return span.getSpanContext().getTraceId();
+        }
+        String mdcTraceId = org.slf4j.MDC.get("trace_id");
+        return mdcTraceId != null ? mdcTraceId : null;
     }
 }

@@ -7,4 +7,6 @@ plugins {
 dependencies {
     api("org.springframework.boot:spring-boot-starter-web")
     api("org.springframework.boot:spring-boot-starter-validation")
+    api("io.opentelemetry:opentelemetry-api")
+    api("net.logstash.logback:logstash-logback-encoder:8.0")
 }

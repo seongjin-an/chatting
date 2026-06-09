@@ -1,0 +1,48 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: warn
+
+positions:
+  filename: /tmp/positions/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    timeout: 10s
+    backoff_config:
+      min_period: 500ms
+      max_period: 5m
+      max_retries: 10
+
+scrape_configs:
+  - job_name: chat-msa-services
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: chat-msa
+          __path__: /var/log/chat-msa/*.log
+
+    pipeline_stages:
+      # JSON 로그 파싱 (logstash-logback-encoder 출력 형식)
+      - json:
+          expressions:
+            level:     level
+            service:   service
+            trace_id:  trace_id
+            span_id:   span_id
+            message:   message
+            timestamp: "@timestamp"
+
+      # Loki 레이블 등록 (cardinality 낮은 필드만)
+      - labels:
+          level:
+          service:
+
+      # trace_id는 레이블 대신 JSON 필드로 유지 (Grafana derivedField에서 파싱)
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+          fallback_formats:
+            - "2006-01-02T15:04:05.999-0700"
+            - "2006-01-02T15:04:05.999Z"

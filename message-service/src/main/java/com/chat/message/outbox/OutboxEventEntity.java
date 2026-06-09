@@ -70,8 +70,8 @@ public class OutboxEventEntity {
         e.status = OutboxStatus.PENDING;
         e.retryCount = 0;
         e.createdAt = Instant.now();
-        e.traceId = MDC.get("traceId");
-        e.spanId = MDC.get("spanId");
+        e.traceId = MDC.get("trace_id");
+        e.spanId = MDC.get("span_id");
         return e;
     }
 
