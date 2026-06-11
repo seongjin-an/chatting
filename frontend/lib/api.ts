@@ -47,6 +47,7 @@ export interface SpringPage<T> {
 export interface Channel {
   channelId: number;
   title: string;
+  unreadCount?: number;
 }
 
 export interface MessageHistory {

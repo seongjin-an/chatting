@@ -10,9 +10,13 @@ import org.springframework.data.jpa.repository.Query;
 public interface ChannelRepository extends JpaRepository<ChannelEntity, Long> {
 
     @Query("""
-        SELECT CH.channelId, CH.title
+        SELECT CH.channelId AS channelId, CH.title AS title,
+               (SELECT COUNT(M) FROM MessageEntity M
+                WHERE M.channelId = CH.channelId
+                AND M.messageId > COALESCE(CM.lastReadMessageId, 0))
+               AS unreadCount
         FROM ChannelEntity CH
-        JOIN ChannelMemberEntity CM ON (CH.channelId = CM.channelId)
+        JOIN ChannelMemberEntity CM ON CH.channelId = CM.channelId
         WHERE CM.userId = :userId
     """)
     Page<ChannelProjection> findMyChannelsByUserId(UUID userId, Pageable pageable);

@@ -52,6 +52,9 @@ public class MessageFanoutHandler implements KafkaMessageProcessor<MessageFanout
         String userKey = KeyPrefix.WEBSOCKET_USER + userId;
         Set<String> connectionKeys = redisTemplate.opsForSet().members(userKey);
         if (connectionKeys == null || connectionKeys.isEmpty()) {
+            // 오프라인 유저 — 미읽음 카운터 증가
+            redisTemplate.opsForValue().increment(
+                KeyPrefix.UNREAD_COUNT + userId + ":" + contentMessage.channelId());
             return;
         }
 

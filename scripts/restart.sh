@@ -5,8 +5,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOGS="$ROOT/logs"
 PIDS="$ROOT/pids"
 
-# Java 21 우선 사용
-JAVA_CMD="$(/usr/libexec/java_home -v 21 2>/dev/null || /usr/libexec/java_home -v 17 2>/dev/null)/bin/java"
+# Java 21 우선 사용 — Gradle 빌드도 동일 JDK를 쓰도록 JAVA_HOME 통일
+JAVA_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null || /usr/libexec/java_home -v 17 2>/dev/null)"
+export JAVA_HOME
+JAVA_CMD="$JAVA_HOME/bin/java"
 
 CYAN='\033[0;36m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 info()    { echo -e "${CYAN}[INFO]${NC}  $*"; }

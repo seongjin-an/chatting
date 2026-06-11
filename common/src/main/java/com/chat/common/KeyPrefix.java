@@ -6,5 +6,6 @@ public class KeyPrefix {
     public static final String WEBSOCKET_CONNECTION = "ws:connection:";
     public static final String CHANNEL_MEMBERS = "channel:members:";
 
-    //public static final String READ_LAST_MESSAGE = "read:";
+    // unread:{userId}:{channelId} — 오프라인 수신 미읽음 카운터
+    public static final String UNREAD_COUNT = "unread:";
 }

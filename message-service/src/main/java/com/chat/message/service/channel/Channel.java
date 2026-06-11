@@ -13,12 +13,14 @@ import lombok.ToString;
 public class Channel {
     private final Long channelId;
     private final String title;
+    private final long unreadCount;
 
     public static Channel from(ChannelEntity channelEntity) {
-        return new Channel(channelEntity.getChannelId(), channelEntity.getTitle());
+        return new Channel(channelEntity.getChannelId(), channelEntity.getTitle(), 0L);
     }
 
     public static Channel from(ChannelProjection channelProjection) {
-        return new Channel(channelProjection.getChannelId(), channelProjection.getTitle());
+        Long raw = channelProjection.getUnreadCount();
+        return new Channel(channelProjection.getChannelId(), channelProjection.getTitle(), raw != null ? raw : 0L);
     }
 }

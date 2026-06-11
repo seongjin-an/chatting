@@ -3,19 +3,29 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useChannels, useJoinChannel } from "@/hooks/useChannel";
+import { useChannels, useJoinChannel, useMyChannels, MY_CHANNELS_KEY } from "@/hooks/useChannel";
+import { useWebSocketStore } from "@/store/webSocketStore";
 
 export default function RoomsPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const { data: channels = [], isLoading: isChannelsLoading } = useChannels();
   const joinChannel = useJoinChannel();
+  useMyChannels();
+  const unreadCounts = useWebSocketStore((s) => s.unreadCounts);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.replace("/login");
   }, [isAuthenticated, isLoading, router]);
+
+  // 채팅방에서 돌아오거나 첫 진입 시 항상 서버 최신값으로 동기화
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: MY_CHANNELS_KEY });
+  }, [queryClient]);
 
   const filtered = channels.filter((c) =>
     c.title.toLowerCase().includes(search.toLowerCase())
@@ -71,9 +81,18 @@ export default function RoomsPage() {
               key={channel.channelId}
               className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
             >
-              <p className="text-sm font-semibold text-gray-900">
-                {channel.title}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-gray-900">
+                  {channel.title}
+                </p>
+                {(unreadCounts[String(channel.channelId)] ?? 0) > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-indigo-500 rounded-full">
+                    {unreadCounts[String(channel.channelId)] > 99
+                      ? "99+"
+                      : unreadCounts[String(channel.channelId)]}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => handleEnter(channel.channelId)}
                 className="px-3 py-1.5 text-xs font-medium text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50"

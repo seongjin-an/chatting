@@ -1,5 +1,6 @@
 package com.chat.message.kafka.message.in;
 
+import com.chat.common.KeyPrefix;
 import com.chat.message.domain.ChannelMemberEntity;
 import com.chat.message.kafka.KafkaProducer;
 import com.chat.message.kafka.message.KafkaMessageProcessor;
@@ -43,8 +44,8 @@ public class ReadRelayHandler implements KafkaMessageProcessor<ReadRelayRequest>
             .orElseThrow();
         channelMember.updateLastReadMessageId(message.messageId());
 
-        //String redisKey = KeyPrefix.READ_LAST_MESSAGE + message.channelId() + ":" + message.userId();
-        //redisTemplate.opsForValue().set(redisKey, message.messageId().toString());
+        // 채널 입장 시 읽음 처리 → 오프라인 미읽음 카운터 제거
+        redisTemplate.delete(KeyPrefix.UNREAD_COUNT + message.userId() + ":" + message.channelId());
 
         List<String> recipientIds = channelMemberCacheService.getRecipientIds(message.channelId());
         ReadFanoutPayload payload = new ReadFanoutPayload(
