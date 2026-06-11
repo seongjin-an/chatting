@@ -7,5 +7,6 @@ public record MessageRelayRequest(
     String senderName,
     Long channelId,
     String content,
-    String instanceId
+    String instanceId,
+    String clientMessageId
 ) implements KafkaMessage {}

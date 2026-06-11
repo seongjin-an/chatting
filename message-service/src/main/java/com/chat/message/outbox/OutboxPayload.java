@@ -10,6 +10,7 @@ public record OutboxPayload(
     String senderName,
     String content,
     Long createdAt,
+    String clientMessageId,
     List<String> recipientIds
 ) {
     public static OutboxPayload of(ContentMessage contentMessage, List<String> recipientIds) {
@@ -20,6 +21,7 @@ public record OutboxPayload(
             contentMessage.senderName(),
             contentMessage.content(),
             contentMessage.createdAt(),
+            contentMessage.clientMessageId(),
             recipientIds
         );
     }

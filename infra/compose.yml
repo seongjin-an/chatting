@@ -147,6 +147,8 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=7d"
       - "--web.enable-lifecycle"
+      # k6 부하 테스트 메트릭 수신 (experimental-prometheus-rw)
+      - "--web.enable-remote-write-receiver"
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./.data/prometheus:/prometheus

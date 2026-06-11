@@ -7,6 +7,7 @@ export interface ContentMessage {
   senderName: string;
   content: string;
   createdAt: number;
+  clientMessageId?: string;
 }
 
 export interface ReadEvent {

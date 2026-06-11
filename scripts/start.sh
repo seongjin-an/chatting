@@ -5,8 +5,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOGS="$ROOT/logs"
 PIDS="$ROOT/pids"
 
-# Java 21 우선 사용
-JAVA_CMD="$(/usr/libexec/java_home -v 21 2>/dev/null || /usr/libexec/java_home -v 17 2>/dev/null)/bin/java"
+# Java 21 우선 사용 — Gradle 빌드도 동일 JDK를 쓰도록 JAVA_HOME 통일
+JAVA_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null || /usr/libexec/java_home -v 17 2>/dev/null)"
+export JAVA_HOME
+JAVA_CMD="$JAVA_HOME/bin/java"
 
 # OTel Java Agent
 OTEL_AGENT_VERSION="2.8.0"

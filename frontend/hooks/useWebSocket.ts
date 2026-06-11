@@ -32,7 +32,12 @@ export function useChat(channelId: string) {
     if (!content.trim()) return;
     sendWebSocketMessage({
       type: "SEND_MESSAGE",
-      payload: { channelId: Number(channelId), content: content.trim() },
+      payload: {
+        channelId: Number(channelId),
+        content: content.trim(),
+        // 재전송 시에도 동일 ID가 유지되어야 서버가 중복 저장을 막을 수 있다
+        clientMessageId: crypto.randomUUID(),
+      },
     });
   }
 

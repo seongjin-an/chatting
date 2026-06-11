@@ -35,6 +35,15 @@ public class MessageRelayHandler implements KafkaMessageProcessor<MessageRelayRe
     @Override
     @Transactional
     public void handle(MessageRelayRequest request) {
+        // 0. 멱등성 검사 — 클라이언트 재전송/컨슈머 재처리(at-least-once) 시 중복 저장 방지.
+        //    조회-후-저장 사이 race는 (channel_id, client_message_id) 유니크 제약이 최종 차단한다.
+        if (request.clientMessageId() != null
+            && messageRepository.existsByChannelIdAndClientMessageId(request.channelId(), request.clientMessageId())) {
+            log.info("[Idempotency] duplicate message skipped: channelId={}, clientMessageId={}",
+                request.channelId(), request.clientMessageId());
+            return;
+        }
+
         // 1. Snowflake ID 발급
         long messageId = snowflakeIdGenerator.nextId();
         long now = System.currentTimeMillis();
@@ -45,7 +54,8 @@ public class MessageRelayHandler implements KafkaMessageProcessor<MessageRelayRe
             messageId,
             UUID.fromString(request.senderId()),
             request.senderName(),
-            request.content()
+            request.content(),
+            request.clientMessageId()
         );
         messageRepository.save(messageEntity);
 
@@ -53,7 +63,7 @@ public class MessageRelayHandler implements KafkaMessageProcessor<MessageRelayRe
         // DB는 Long, WS/API는 String으로 직렬화해 JS Number 정밀도 문제 방지
         ContentMessage contentMessage = ContentMessage.of(
             String.valueOf(messageId), request.channelId(), request.senderId(), request.senderName(),
-            request.content(), now
+            request.content(), now, request.clientMessageId()
         );
         outboxEventWriter.write(contentMessage);
     }

@@ -10,5 +10,6 @@ public record MessageFanoutRequest(
     String senderName,
     String content,
     Long createdAt,
+    String clientMessageId,
     List<String> recipientIds
 ) implements KafkaMessage {}

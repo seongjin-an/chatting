@@ -42,9 +42,9 @@ datasources:
     jsonData:
       maxLines: 1000
       derivedFields:
-        # JSON 로그의 trace_id 필드 → Tempo 링크 생성
+        # JSON 로그의 traceid 필드 → Tempo 링크 생성 (OTel Collector가 내보내는 실제 필드명은 traceid)
         - name: TraceID
-          matcherRegex: '"trace_id":"([a-f0-9]{32})"'
+          matcherRegex: '"traceid":"([a-f0-9]{32})"'
           url: "$${__value.raw}"
           datasourceUid: tempo-uid
           urlDisplayLabel: "Tempo에서 보기"

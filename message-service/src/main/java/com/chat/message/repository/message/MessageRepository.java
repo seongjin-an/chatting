@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface MessageRepository extends JpaRepository<MessageEntity, MessageEntityId> {
 
+    boolean existsByChannelIdAndClientMessageId(Long channelId, String clientMessageId);
+
     @Query("""
         SELECT M
         FROM MessageEntity M

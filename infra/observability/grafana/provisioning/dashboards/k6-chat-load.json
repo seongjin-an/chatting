@@ -1,0 +1,68 @@
+{
+  "title": "Chat Load Test (k6)",
+  "uid": "k6-chat-load",
+  "tags": ["k6", "load-test"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "E2E 메시지 레이턴시 (전송→수신)",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "k6_chat_e2e_latency_p50", "legendFormat": "p50" },
+        { "refId": "B", "expr": "k6_chat_e2e_latency_p95", "legendFormat": "p95" },
+        { "refId": "C", "expr": "k6_chat_e2e_latency_p99", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "메시지 처리량 (전송/수신 rate)",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+      "fieldConfig": { "defaults": { "unit": "mps" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "rate(k6_chat_msgs_sent_total[$__rate_interval])", "legendFormat": "전송/s" },
+        { "refId": "B", "expr": "rate(k6_chat_msgs_received_total[$__rate_interval])", "legendFormat": "수신/s (전체 VU 합산)" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "중복 카운터 (멱등성 검증)",
+      "gridPos": { "h": 9, "w": 8, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+      "targets": [
+        { "refId": "A", "expr": "k6_chat_dup_sends_total", "legendFormat": "의도적 재전송" },
+        { "refId": "B", "expr": "k6_chat_logical_duplicates_total", "legendFormat": "중복 저장 (0이어야 정상)" },
+        { "refId": "C", "expr": "k6_chat_transport_duplicates_total", "legendFormat": "중복 전달" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "가상 유저 (VU)",
+      "gridPos": { "h": 9, "w": 8, "x": 8, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+      "targets": [
+        { "refId": "A", "expr": "k6_vus", "legendFormat": "VUs" }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "WebSocket 오류",
+      "gridPos": { "h": 9, "w": 8, "x": 16, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+      "targets": [
+        { "refId": "A", "expr": "k6_chat_ws_errors_total", "legendFormat": "오류 누적" }
+      ]
+    }
+  ]
+}
