@@ -9,6 +9,7 @@ import com.chat.fanout.kafka.message.KafkaMessageType;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -53,8 +54,12 @@ public class MessageFanoutHandler implements KafkaMessageProcessor<MessageFanout
         Set<String> connectionKeys = redisTemplate.opsForSet().members(userKey);
         if (connectionKeys == null || connectionKeys.isEmpty()) {
             // 오프라인 유저 — 미읽음 카운터 증가
-            redisTemplate.opsForValue().increment(
-                KeyPrefix.UNREAD_COUNT + userId + ":" + contentMessage.channelId());
+            // count == 1 이면 키가 새로 생성된 것 → TTL 30일 설정 (READ로 삭제 안 되더라도 자동 정리)
+            String unreadKey = KeyPrefix.UNREAD_COUNT + userId + ":" + contentMessage.channelId();
+            Long count = redisTemplate.opsForValue().increment(unreadKey);
+            if (Long.valueOf(1L).equals(count)) {
+                redisTemplate.expire(unreadKey, 30, TimeUnit.DAYS);
+            }
             return;
         }
 
